@@ -1,0 +1,1 @@
+Dane- 10 folderów na 10 klas, niektóre zdjęcia są zaszumione (ich kolor jest wyblakly, są narysowane na kartce w kratkę)
