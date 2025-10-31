@@ -1,0 +1,1 @@
+Link do datasetu: https://www.kaggle.com/datasets/gergvincze/simple-hand-drawn-and-digitized-images/data
