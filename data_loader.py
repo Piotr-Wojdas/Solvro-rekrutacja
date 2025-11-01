@@ -15,7 +15,6 @@ class SymbolDataset(Dataset):
         self.file_paths = []
         self.labels = []
         
-        # Wczytanie ścieżek do plików i przypisanie etykiet
         self.classes = sorted(os.listdir(root_dir))
         self.class_to_idx = {cls_name: i for i, cls_name in enumerate(self.classes)}
         
@@ -32,7 +31,6 @@ class SymbolDataset(Dataset):
         img_path = self.file_paths[idx]
         label = self.labels[idx]
         
-        # Otwarcie obrazu i konwersja do 'L' (skala szarości)
         image = Image.open(img_path).convert('L')
         
         if self.transform:
@@ -43,20 +41,24 @@ class SymbolDataset(Dataset):
 def get_dataloaders(dataset_dir=dataset_dir, batch_size=batch_size, test_size=0.2, val_size=0.2):
     
     train_transform = transforms.Compose([
-        transforms.Lambda(lambda img: remove_grid_fft(img)),
-        transforms.RandomRotation(degrees=15),
-        transforms.RandomAffine(degrees=0, translate=(0.1, 0.1), scale=(0.9, 1.1)),
-        transforms.Resize((img_height, img_width)),
-        transforms.ToTensor(),
-        transforms.Normalize((0.5,), (0.5,))
-    ])
+    transforms.Resize((img_height, img_width)),
+    transforms.Lambda(remove_grid_fft),
+    transforms.RandomAffine(degrees=20, translate=(0.15, 0.15), scale=(0.85, 1.15), shear=10),
+    transforms.RandomPerspective(distortion_scale=0.3, p=0.5),
+    transforms.ElasticTransform(alpha=50.0, sigma=5.0),
+    transforms.ColorJitter(brightness=0.4, contrast=0.4),
+    transforms.ToTensor(),
+    transforms.Lambda(lambda x: (x > 0.5).float()), 
+    transforms.Normalize((0.5,), (0.5,))
+])
 
     val_test_transform = transforms.Compose([
-        transforms.Lambda(lambda img: remove_grid_fft(img)),
-        transforms.Resize((img_height, img_width)),
-        transforms.ToTensor(),
-        transforms.Normalize((0.5,), (0.5,))
-    ])
+    transforms.Resize((img_height, img_width)),
+    transforms.Lambda(remove_grid_fft),
+    transforms.ToTensor(),
+    transforms.Lambda(lambda x: (x > 0.5).float()),
+    transforms.Normalize((0.5,), (0.5,))
+])
 
     # Utworzenie pełnego zbioru danych
     full_dataset = SymbolDataset(root_dir=dataset_dir)
@@ -66,7 +68,7 @@ def get_dataloaders(dataset_dir=dataset_dir, batch_size=batch_size, test_size=0.
     labels = full_dataset.labels
     
     train_val_indices, test_indices = train_test_split(
-        indices, test_size=test_size, stratify=labels, random_state=42
+        indices, test_size=test_size, stratify=labels, random_state=67
     )
     
     # Podział zbioru treningowo-walidacyjnego na treningowy i walidacyjny
@@ -75,23 +77,18 @@ def get_dataloaders(dataset_dir=dataset_dir, batch_size=batch_size, test_size=0.
         train_val_indices, test_size=val_size, stratify=train_val_labels, random_state=42
     )
 
-    # Tworzenie podzbiorów (Subset)
+    
     train_dataset = Subset(full_dataset, train_indices)
     val_dataset = Subset(full_dataset, val_indices)
     test_dataset = Subset(full_dataset, test_indices)
     
-    # Przypisanie transformacji do podzbiorów
     train_dataset.dataset.transform = train_transform
     val_dataset.dataset.transform = val_test_transform
     test_dataset.dataset.transform = val_test_transform
 
-    # Tworzenie DataLoaderów
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, pin_memory=True)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, pin_memory=True)
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, pin_memory=True)
     
     return train_loader, val_loader, test_loader
 
-if __name__ == '__main__':
-    train_loader, val_loader, test_loader = get_dataloaders()
-    
