@@ -1,61 +1,81 @@
 import torch
 import hyperparameters as hp
-from torchvision import datasets, transforms
-from torch.utils.data import DataLoader
+from torchvision import transforms
+from torch.utils.data import DataLoader, Dataset
+from PIL import Image
+import os
 
+# Import funkcji z pliku Functions.py
+from Functions import remove_grid_fft, visualize_transformations
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(f"Używane urządzenie: {device}")
 
+# Definicje transformacji
+transform = transforms.Compose([
+    transforms.Lambda(remove_grid_fft),
+    transforms.ToTensor(),
+    transforms.Lambda(lambda x: (x > 0.5).float()),
+    transforms.Normalize((0.5,), (0.5,))
+])
 
+class ImageDataset(Dataset):
+    def __init__(self, root_dir, transform=None):
+        self.root_dir = root_dir
+        self.transform = transform
+        self.classes = sorted(os.listdir(root_dir))
+        self.class_to_idx = {cls_name: i for i, cls_name in enumerate(self.classes)}
+        self.file_paths = self._get_file_paths()
+        self.labels = self._get_labels()
 
-# DO SPRAWDZENIA TA FUNKCJA
+    def _get_file_paths(self):
+        file_paths = []
+        for cls in self.classes:
+            class_dir = os.path.join(self.root_dir, cls)
+            for filename in os.listdir(class_dir):
+                file_paths.append(os.path.join(class_dir, filename))
+        return file_paths
 
-def create_dataloader(data_dir, batch_size=32, img_size=(64, 64)):
-    # Definicja transformacji, które zostaną zastosowane do każdego obrazu
-    transform = transforms.Compose([
-        # Konwersja do skali szarości - kolor prawdopodobnie nie jest istotny
-        transforms.Grayscale(num_output_channels=1),
-        # Zmiana rozmiaru wszystkich obrazów do tego samego wymiaru
-        transforms.Resize(img_size),
-        # Konwersja obrazu do tensora PyTorch (wartości pikseli skalowane do [0, 1])
-        transforms.ToTensor(),
-        # Normalizacja tensora do zakresu [-1, 1] co często pomaga w treningu
-        transforms.Normalize(mean=[0.5], std=[0.5])
-    ])
+    def _get_labels(self):
+        labels = []
+        for file_path in self.file_paths:
+            class_name = os.path.basename(os.path.dirname(file_path))
+            labels.append(self.class_to_idx[class_name])
+        return labels
 
-    # Wczytanie zbioru danych za pomocą ImageFolder
-    # Automatycznie znajduje klasy na podstawie nazw podfolderów
-    dataset = datasets.ImageFolder(root=data_dir, transform=transform)
+    def __len__(self):
+        return len(self.file_paths)
 
-    # Stworzenie DataLoader'a, który będzie dostarczał paczki danych
-    dataloader = DataLoader(
-        dataset,
-        batch_size=batch_size,
-        shuffle=True,  # Mieszanie danych jest ważne podczas treningu
-        num_workers=2  # Użycie dodatkowych procesów do ładowania danych
-    )
-
-    class_to_idx = dataset.class_to_idx
-    print(f"Znaleziono {len(dataset)} obrazów w {len(class_to_idx)} klasach.")
-    print("Mapowanie klas:", class_to_idx)
-
-    return dataloader, class_to_idx
+    def __getitem__(self, idx):
+        img_path = self.file_paths[idx]
+        label = self.labels[idx]
+        img = Image.open(img_path).convert("L") # Konwersja do skali szarości
+        
+        if self.transform:
+            img = self.transform(img)
+            
+        return img, label
 
 if __name__ == '__main__':
-    # Przykład użycia
-    DATASET_PATH = 'dataset'
-    BATCH_SIZE = 64
+    dataset_path = 'dataset'
+    full_dataset = ImageDataset(root_dir=dataset_path, transform=transform)
     
-    try:
-        train_loader, class_map = create_dataloader(DATASET_PATH, BATCH_SIZE)
+    print(f"Liczba klas: {len(full_dataset.classes)}")
+    print(f"Całkowita liczba obrazów: {len(full_dataset)}")
 
-        # Pętla przez jedną paczkę danych, aby zobaczyć wynik
-        images, labels = next(iter(train_loader))
+    # Podział na zbiór treningowy i testowy
+    train_size = int(0.8 * len(full_dataset))
+    test_size = len(full_dataset) - train_size
+    train_dataset, test_dataset = torch.utils.data.random_split(full_dataset, [train_size, test_size])
 
-        print(f"\nRozmiar paczki obrazów: {images.shape}") # [batch_size, channels, height, width]
-        print(f"Rozmiar paczki etykiet: {labels.shape}")
-        print(f"Przykładowe etykiety: {labels[:5]}")
+    print(f"Rozmiar zbioru treningowego: {len(train_dataset)}")
+    print(f"Rozmiar zbioru testowego: {len(test_dataset)}")
 
-    except FileNotFoundError:
-        print(f"Błąd: Nie znaleziono folderu '{DATASET_PATH}'. Upewnij się, że istnieje i zawiera podfoldery z klasami.")
-    except Exception as e:
-        print(f"Wystąpił błąd: {e}")
+    # Tworzenie DataLoaderów
+    train_loader = DataLoader(train_dataset, batch_size=hp.batch_size, shuffle=True)
+    test_loader = DataLoader(test_dataset, batch_size=hp.batch_size, shuffle=False)
+
+    print("DataLoadery zostały utworzone.")
+
+    # Używamy train_dataset do wizualizacji
+    visualize_transformations(train_dataset)   
