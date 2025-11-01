@@ -4,6 +4,7 @@ from PIL import Image
 import matplotlib.pyplot as plt
 import random
 import os
+import torch
 
 def remove_grid_fft(img):
     """
@@ -47,55 +48,62 @@ def remove_grid_fft(img):
     
     return Image.fromarray(img_back)
 
-def visualize_transformations(dataset, num_images=10):
-    """
-    Wizualizuje efekt transformacji na losowych obrazkach ze zbioru danych.
-    Działa zarówno z obiektem Dataset, jak i Subset (wynik random_split).
-    """
-    fig, axes = plt.subplots(num_images, 3, figsize=(12, num_images * 2.5))
-    fig.suptitle('Efekt transformacji na losowych obrazkach', fontsize=16)
-    
-    # Sprawdzenie, czy dataset jest podzbiorem (Subset) czy pełnym zbiorem (Dataset)
-    is_subset = hasattr(dataset, 'dataset')
-    
-    random_indices = random.sample(range(len(dataset)), num_images)
-    
-    for i, idx in enumerate(random_indices):
-        # Pobranie danych w zależności od typu datasetu
-        if is_subset:
-            # Mamy do czynienia z torch.utils.data.Subset
-            actual_idx = dataset.indices[idx]
-            source_dataset = dataset.dataset
-            img_path = source_dataset.file_paths[actual_idx]
-            transformed_img, label = dataset[idx]
-        else:
-            # Mamy do czynienia ze zwykłym Datasetem
-            img_path = dataset.file_paths[idx]
-            transformed_img, label = dataset[idx]
 
-        original_img = Image.open(img_path).convert("L")
-        
-        # Wyświetlenie oryginalnego obrazu
-        ax = axes[i, 0]
-        ax.imshow(original_img, cmap='gray')
-        ax.set_title(f'Klasa: {dataset.dataset.classes[label]}')
-        ax.axis('off')
 
-        # Wyświetlenie strzałki
-        ax = axes[i, 1]
-        ax.text(0.5, 0.5, '→', ha='center', va='center', fontsize=20)
-        ax.axis('off')
+def train_one_epoch(model, data_loader, criterion, optimizer, device):
+    """
+    Przeprowadza jedną epokę treningu.
+    """
+    model.train()
+    total_loss = 0
+    correct_predictions = 0
+    total_samples = 0
+    
+    for images, labels in data_loader:
+        images, labels = images.to(device), labels.to(device)
         
-        # Wyświetlenie przetransformowanego obrazu
-        ax = axes[i, 2]
-        # Denormalizacja i zmiana wymiarów do wyświetlenia
-        transformed_img_display = transformed_img.numpy().squeeze()
-        if transformed_img_display.min() < 0: # Jeśli była normalizacja
-            transformed_img_display = transformed_img_display / 2 + 0.5
+        # Wyzerowanie gradientów
+        optimizer.zero_grad()
         
-        ax.imshow(transformed_img_display, cmap='gray')
-        ax.set_title('Po transformacji')
-        ax.axis('off')
+        # Forward pass
+        outputs = model(images)
+        loss = criterion(outputs, labels)
         
-    plt.tight_layout(rect=[0, 0.03, 1, 0.95])
-    plt.show()
+        # Backward pass i optymalizacja
+        loss.backward()
+        optimizer.step()
+        
+        # Statystyki
+        total_loss += loss.item()
+        _, predicted = torch.max(outputs.data, 1)
+        total_samples += labels.size(0)
+        correct_predictions += (predicted == labels).sum().item()
+        
+    avg_loss = total_loss / len(data_loader)
+    accuracy = correct_predictions / total_samples
+    return avg_loss, accuracy
+
+def evaluate(model, data_loader, criterion, device):
+    """
+    Ocenia model na danym zbiorze danych (walidacyjnym lub testowym).
+    """
+    model.eval()
+    total_loss = 0
+    correct_predictions = 0
+    total_samples = 0
+    
+    with torch.no_grad():
+        for images, labels in data_loader:
+            images, labels = images.to(device), labels.to(device)
+            
+            outputs = model(images)
+            loss = criterion(outputs, labels)
+            
+            total_loss += loss.item()
+            _, predicted = torch.max(outputs.data, 1)
+            total_samples += labels.size(0)
+            correct_predictions += (predicted == labels).sum().item()
+            
+    avg_loss = total_loss / len(data_loader)
+    accuracy = correct_predictions / total_samples
+    return avg_loss, accuracy
