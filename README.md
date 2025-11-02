@@ -11,3 +11,5 @@
  pliku best_model.pth
 
  classify służy do klasyfikacji nowych, swoich zdjęć. Należy w zmiennej path ustawić swoją ścieżkę ze zdjęciem i odpalić kod
+
+ w etst (pol. test) było podejście do wprowadzenia optuny ale ostatecznie niewykorzystane
