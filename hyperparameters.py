@@ -3,7 +3,7 @@ img_height = 130
 img_width = 160
 # model
 batch_size = 32
-epochs = 50
+epochs = 100
 learning_rate = 0.001
 num_classes = 10 
 dataset_dir = 'dataset'

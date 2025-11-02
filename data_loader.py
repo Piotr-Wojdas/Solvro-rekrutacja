@@ -1,5 +1,4 @@
 import os
-import torch
 from torch.utils.data import Dataset, DataLoader, Subset
 from torchvision import transforms
 from PIL import Image
@@ -90,5 +89,6 @@ def get_dataloaders(dataset_dir=dataset_dir, batch_size=batch_size, test_size=0.
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, pin_memory=True)
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, pin_memory=True)
     
-    return train_loader, val_loader, test_loader
+    class_names = full_dataset.classes
+    return train_loader, val_loader, test_loader, class_names
 
