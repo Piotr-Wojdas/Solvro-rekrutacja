@@ -3,8 +3,19 @@ import cv2
 from PIL import Image
 import torch
 from hyperparameters import center_size, thresh 
+from skimage.morphology import binary_closing, binary_opening
 
-def remove_grid_fft(img):
+def apply_morphological_ops(x):
+    # Konwersja tensora do numpy, usunięcie wymiaru kanału
+    x_np = x.squeeze().numpy()
+    # Zastosowanie zamknięcia binarnego do wypełnienia małych dziur
+    x_closed = binary_closing(x_np)
+    # Zastosowanie otwarcia binarnego do usunięcia małych szumów
+    x_opened = binary_opening(x_closed)
+    # Konwersja z powrotem do tensora (boolean -> float) i dodanie wymiaru kanału
+    return torch.from_numpy(x_opened).float().unsqueeze(0)
+
+def remove_grid_fft(img, adaptprog=False):
     img_np = np.array(img.convert('L')) # kolor nie ma znaczenia, konwertujemy do skali szarości
     
     # transformacja fouriera
@@ -35,8 +46,9 @@ def remove_grid_fft(img):
     
     img_back = cv2.normalize(img_back, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8U)
     
-    return Image.fromarray(img_back)
 
+
+    return Image.fromarray(img_back)
 
 def train_one_epoch(model, data_loader, criterion, optimizer, device):
 

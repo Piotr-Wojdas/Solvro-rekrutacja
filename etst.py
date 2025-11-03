@@ -87,24 +87,24 @@ if __name__ == '__main__':
     # ETAP 1: STROJENIE HIPERPARAMETRÓW
     # ==================================================================
     # print("="*50)
-    # print("ROZPOCZYNAM ETAP 1: STROJENIE HIPERPARAMETRÓW")
-    # print("="*50)
+    print("ROZPOCZYNAM ETAP 1: STROJENIE HIPERPARAMETRÓW")
+    print("="*50)
     
-    # pruner = optuna.pruners.MedianPruner()
-    # study = optuna.create_study(direction="maximize", pruner=pruner)
-    # study.optimize(objective, n_trials=3)
+    pruner = optuna.pruners.MedianPruner()
+    study = optuna.create_study(direction="maximize", pruner=pruner)
+    study.optimize(objective, n_trials=3)
 
-    # print("\nZakończono strojenie hiperparametrów!")
-    # best_params = study.best_trial.params
-    # print(f"Najlepsza dokładność walidacyjna: {study.best_trial.value:.4f}")
-    # print("Najlepsze hiperparametry: ", best_params)
+    print("\nZakończono strojenie hiperparametrów!")
+    best_params = study.best_trial.params
+    print(f"Najlepsza dokładność walidacyjna: {study.best_trial.value:.4f}")
+    print("Najlepsze hiperparametry: ", best_params)
 
-    # # ==================================================================
-    # # ETAP 2: FINALNY TRENING Z NAJLEPSZYMI PARAMETRAMI
-    # # ==================================================================
-    # print("\n" + "="*50)
-    # print("ROZPOCZYNAM ETAP 2: FINALNY TRENING")
-    # print("="*50)
+    # ==================================================================
+    # ETAP 2: FINALNY TRENING Z NAJLEPSZYMI PARAMETRAMI
+    # ==================================================================
+    print("\n" + "="*50)
+    print("ROZPOCZYNAM ETAP 2: FINALNY TRENING")
+    print("="*50)
 
     # Pobranie danych
     train_loader, val_loader, test_loader, class_names = get_dataloaders()

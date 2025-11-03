@@ -13,4 +13,4 @@ center_size = 30
 thresh = 98
 
 # Early stopping
-patience = 10
+patience = 20

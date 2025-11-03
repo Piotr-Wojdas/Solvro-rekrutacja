@@ -66,14 +66,17 @@ if __name__ == '__main__':
         train_loss, train_acc = train_one_epoch(model, train_loader, criterion, optimizer, device)
         val_loss, val_acc, _, _= evaluate(model, val_loader, criterion, device)
         
-        print(f"Epoka [{epoch+1}/{epochs}] | "
-              f"Strata treningowa: {train_loss:.4f}, Dokładność treningowa: {train_acc:.4f} | "
-              f"Strata walidacyjna: {val_loss:.4f}, Dokładność walidacyjna: {val_acc:.4f}")
+        # print(f"Epoka [{epoch+1}/{epochs}] | "
+        #       f"Strata treningowa: {train_loss:.4f}, Dokładność treningowa: {train_acc:.4f} | "
+        #       f"Strata walidacyjna: {val_loss:.4f}, Dokładność walidacyjna: {val_acc:.4f}")
 
         # early stopping na najlepszym modelu
         if val_acc > best_val_accuracy:
             best_val_accuracy = val_acc
             torch.save(model.state_dict(), best_model_path)
+            print(f"Epoka [{epoch+1}/{epochs}] | "
+              f"Strata treningowa: {train_loss:.4f}, Dokładność treningowa: {train_acc:.4f} | "
+              f"Strata walidacyjna: {val_loss:.4f}, Dokładność walidacyjna: {val_acc:.4f}")
             print(f"Zapisano nowy najlepszy model z dokładnością: {best_val_accuracy:.4f}")
             epochs_no_improve = 0
         else:

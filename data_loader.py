@@ -5,7 +5,7 @@ from PIL import Image
 from sklearn.model_selection import train_test_split
 import numpy as np
 from hyperparameters import dataset_dir, batch_size, img_height, img_width
-from Functions import remove_grid_fft
+from Functions import remove_grid_fft, apply_morphological_ops
 
 class SymbolDataset(Dataset):
     def __init__(self, root_dir, transform=None):
@@ -43,11 +43,10 @@ def get_dataloaders(dataset_dir=dataset_dir, batch_size=batch_size, test_size=0.
     transforms.Resize((img_height, img_width)),
     transforms.Lambda(remove_grid_fft),
     transforms.RandomAffine(degrees=20, translate=(0.15, 0.15), scale=(0.85, 1.15), shear=10),
-    transforms.RandomPerspective(distortion_scale=0.3, p=0.5),
     transforms.ElasticTransform(alpha=50.0, sigma=5.0),
-    transforms.ColorJitter(brightness=0.4, contrast=0.4),
     transforms.ToTensor(),
-    transforms.Lambda(lambda x: (x > 0.5).float()), 
+    transforms.Lambda(lambda x: (x > 0.65).float()),
+    transforms.Lambda(apply_morphological_ops),
     transforms.Normalize((0.5,), (0.5,))
 ])
 
@@ -55,7 +54,8 @@ def get_dataloaders(dataset_dir=dataset_dir, batch_size=batch_size, test_size=0.
     transforms.Resize((img_height, img_width)),
     transforms.Lambda(remove_grid_fft),
     transforms.ToTensor(),
-    transforms.Lambda(lambda x: (x > 0.5).float()),
+    transforms.Lambda(lambda x: (x > 0.65).float()),
+    transforms.Lambda(apply_morphological_ops),
     transforms.Normalize((0.5,), (0.5,))
 ])
 
