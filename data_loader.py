@@ -37,27 +37,30 @@ class SymbolDataset(Dataset):
             
         return image, label
 
-def get_dataloaders(dataset_dir=dataset_dir, batch_size=batch_size, test_size=0.2, val_size=0.2):
+def get_dataloaders(dataset_dir=dataset_dir, batch_size=batch_size, test_size=0.2, val_size=0.2, augment=True):
     
-    train_transform = transforms.Compose([
-    transforms.Resize((img_height, img_width)),
-    transforms.Lambda(remove_grid_fft),
-    transforms.RandomAffine(degrees=20, translate=(0.15, 0.15), scale=(0.85, 1.15), shear=10),
-    transforms.ElasticTransform(alpha=50.0, sigma=5.0),
-    transforms.ToTensor(),
-    transforms.Lambda(lambda x: (x > 0.65).float()),
-    transforms.Lambda(apply_morphological_ops),
-    transforms.Normalize((0.5,), (0.5,))
-])
-
     val_test_transform = transforms.Compose([
-    transforms.Resize((img_height, img_width)),
-    transforms.Lambda(remove_grid_fft),
-    transforms.ToTensor(),
-    transforms.Lambda(lambda x: (x > 0.65).float()),
-    transforms.Lambda(apply_morphological_ops),
-    transforms.Normalize((0.5,), (0.5,))
-])
+        transforms.Resize((img_height, img_width)),
+        transforms.Lambda(remove_grid_fft),
+        transforms.ToTensor(),
+        transforms.Lambda(lambda x: (x > 0.65).float()),
+        transforms.Lambda(apply_morphological_ops),
+        transforms.Normalize((0.5,), (0.5,))
+    ])
+
+    if augment:
+        train_transform = transforms.Compose([
+            transforms.Resize((img_height, img_width)),
+            transforms.Lambda(remove_grid_fft),
+            transforms.RandomAffine(degrees=20, translate=(0.15, 0.15), scale=(0.85, 1.15), shear=10),
+            transforms.ElasticTransform(alpha=50.0, sigma=5.0),
+            transforms.ToTensor(),
+            transforms.Lambda(lambda x: (x > 0.65).float()),
+            transforms.Lambda(apply_morphological_ops),
+            transforms.Normalize((0.5,), (0.5,))
+        ])
+    else:
+        train_transform = val_test_transform
 
     # Utworzenie pełnego zbioru danych
     full_dataset = SymbolDataset(root_dir=dataset_dir)

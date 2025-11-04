@@ -8,7 +8,7 @@ from skimage.morphology import binary_closing, binary_opening
 import torch
 
 
-image_path = r"new_images/ccccccc.png"
+image_path = r"new_images/aa.jpg"
 
 # Funkcja do zastosowania zamknięcia morfologicznego w potoku transformacji
 def apply_morphological_ops(x):
@@ -26,7 +26,7 @@ transform = transforms.Compose([
     transforms.Resize((img_height, img_width)),
     transforms.Lambda(remove_grid_fft),
     transforms.ToTensor(),
-    transforms.Lambda(lambda x: (x > 0.6).float()),
+    transforms.Lambda(lambda x: (x > 0.7).float()),
     transforms.Lambda(apply_morphological_ops),
     transforms.Normalize((0.5,), (0.5,))
 ])
@@ -60,8 +60,3 @@ ax[1].set_title("Przetworzony obraz")
 ax[1].axis('off')
 
 plt.show()
-
-
-
-
-

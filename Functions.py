@@ -75,7 +75,7 @@ def train_one_epoch(model, data_loader, criterion, optimizer, device):
     accuracy = correct_predictions / total_samples
     return avg_loss, accuracy
 
-def evaluate(model, data_loader, criterion, device):
+def evaluate(model, data_loader, criterion, device, is_cam_eval=False):
 
     model.eval()
     total_loss = 0
@@ -85,11 +85,11 @@ def evaluate(model, data_loader, criterion, device):
     all_preds = []
     all_labels = []
     
-    with torch.no_grad():
+    with torch.set_grad_enabled(is_cam_eval):
         for images, labels in data_loader:
             images, labels = images.to(device), labels.to(device)
             
-            outputs = model(images)
+            outputs = model(images, register_hook=is_cam_eval)
             loss = criterion(outputs, labels)
             
             total_loss += loss.item()

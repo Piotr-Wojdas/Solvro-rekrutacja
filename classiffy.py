@@ -5,11 +5,11 @@ import matplotlib.pyplot as plt
 import os
 from Functions import remove_grid_fft, apply_morphological_ops
 from hyperparameters import img_height, img_width, num_classes, dataset_dir
-from model import SimpleCNN
+from og_model import SimpleCNN
 from data_loader import SymbolDataset
 
 # Ścieżki
-model_path = "best_model.pth"
+model_path = "THE_BEST_model.pth"
 new_images_dir = "new_images"
 
 # Transformacje
@@ -35,33 +35,37 @@ def classify_and_display_images(images_dir, model_path):
     model.load_state_dict(torch.load(model_path, map_location=device)) 
     model.eval()
 
+
     image_files = [f for f in os.listdir(images_dir) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
+
+   
 
     for image_name in image_files:
         image_path = os.path.join(images_dir, image_name)
-        
-        # Otwieranie i transformacja obrazu
-        img_for_display = Image.open(image_path)
-        img_for_model = img_for_display.convert("L")
-        transformed_img = transform(img_for_model)
-        image_batch = transformed_img.unsqueeze(0).to(device)
+        try:
+            # Otwieranie i transformacja obrazu
+            img_for_display = Image.open(image_path)
+            img_for_model = img_for_display.convert("L")
+            transformed_img = transform(img_for_model)
+            image_batch = transformed_img.unsqueeze(0).to(device)
 
-        # Predykcja
-        with torch.no_grad():
-            output = model(image_batch)
-            _, predicted_idx = torch.max(output, 1)
-            predicted_class = class_names[predicted_idx.item()]
+            # Predykcja
+            with torch.no_grad():
+                output = model(image_batch)
+                _, predicted_idx = torch.max(output, 1)
+                predicted_class = class_names[predicted_idx.item()]
 
-        # Wyświetlanie wyniku
-        plt.figure()
-        plt.imshow(img_for_display,cmap='gray')
-        plt.title(f"Przewidziana klasa: {predicted_class}")
-        plt.axis('off')
-        plt.show()
-        
-        print(f"Plik: '{image_name}' -> Przewidziana klasa: '{predicted_class}'")
+            # Wyświetlanie wyniku
+            plt.figure()
+            plt.imshow(img_for_display,cmap='gray')
+            plt.title(f"Przewidziana klasa: {predicted_class}")
+            plt.axis('off')
+            plt.show()
+            
+            print(f"Plik: '{image_name}' -> Przewidziana klasa: '{predicted_class}'")
 
-      
+        except Exception as e:
+            print(f"Nie udało się przetworzyć pliku {image_name}. Błąd: {e}")
 
 
 if __name__ == '__main__':
