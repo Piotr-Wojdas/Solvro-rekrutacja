@@ -1,5 +1,5 @@
-# solvro-rekrutacja
-## Cały kod jest przedstawiony w notatniku: model-prezentacja.ipynb
+# Solvro-Rekrutacja
+## Cały kod jest przedstawiony [w notatniku:](model-prezentacja.ipynb)
 # obsługa folderów:
  Functions to zbiór funkcji używanych na przestrzeni projektu, nic z nim nie robimy
 
